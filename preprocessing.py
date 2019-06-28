@@ -27,15 +27,15 @@ def pct_change(bw, data, periods):
     data = data.iloc[:,1:]
 
     if bw == True:
-        for j in tqdm(range(data.shape[1])):
+        for j in range(data.shape[1]):
             for r in periods:
                 output[data.iloc[:,j].name + "_" + str(r)] = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
     else:
-    for j in tqdm(range(data.shape[1])):
-        for r in periods:
-            tmpser = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
-            tmpser = tmpser.iloc[r:].reset_index(drop=True)
-            output[data.iloc[:,j].name + "_" + str(r)] = tmpser
+        for j in range(data.shape[1]):
+            for r in periods:
+                tmpser = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
+                tmpser = tmpser.iloc[r:].reset_index(drop=True)
+                output[data.iloc[:,j].name + "_" + str(r)] = tmpser
     return output
 
 def med_outlier(data):
@@ -59,10 +59,12 @@ def standardize(data):
     #standardize data to N(0,1)
     output = pd.DataFrame()
     output["date"] = data["date"]
+    name = data.columns
     data = data.iloc[:,1:]
 
     scaler = StandardScaler()
     output = pd.concat([output,pd.DataFrame(scaler.fit_transform(data))], axis=1)
+    output.columns = name
     return output
   
 def rank_engine(data):
@@ -126,7 +128,7 @@ def match_date(data, date):
     effective_date = ""
     effective_data = None
 
-    for a in tqdm(range(data.shape[1]/2)):
+    for a in range(data.shape[1]/2):
         product_name = str(data.iloc[:,a*2].name[0:3])
         tmp_list = []
         flag = 0
