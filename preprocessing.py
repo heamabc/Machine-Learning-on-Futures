@@ -106,6 +106,22 @@ def binarize(data, zero_centered):
   return output
 
 def match_date(data, date):
+  '''
+  make all data matched date with the date column
+  if today has no data, use last effective date data to replace today data
+  
+  Parameters
+  ----------
+  data: pd.DataFrame
+      even column is the date, odd column is the corresponding data of that feature
+  date: pd.Series
+      date that would like to be matched
+      
+  Returns
+  ----------
+  pd.DataFrame
+      first column is date, all other are matched date data
+  '''
   output = pd.DataFrame()
   output["date"] = date.iloc[:,0]
   effective_date = ""
@@ -122,16 +138,22 @@ def match_date(data, date):
           today = datetime.datetime.strptime(date.iloc[i,0], "%m/%d/%Y")
           first_date = datetime.datetime.strptime(data.iloc[0,a*2], "%m/%d/%Y")
 
+          #3 cases:
+          #first: today is earlier than the first available data, than today data is none
+          #second: today match with the date that data is available, use the first effective data of that date, if no effective data, use last effective data
+          #third: today does not match the date that data is available, use the first last effective data.
           if first_date > today:
               tmp_list.append(None)        
           elif '{d.month}/{d.day}/{d.year}'.format(d=today) in data.iloc[:,a*2].tolist():
               tmp_date = date.iloc[i,0]
+              tmp_data = data[data[product_name + "_date"] == tmp_date]
 
-              #if today has data but it is nan, use last effective data
-              for kk in range(data[data[product_name + "_date"] == tmp_date].shape[0]):
-                  if str(data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1]) != "nan" and data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1] != 0:
+              #if today has multiple data, use only the first useful data. If no useful data, effective date
+              #and effective data remain unchanged
+              for kk in range(tmp_data.shape[0]):
+                  if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
                       effective_date = tmp_date
-                      effective_data = data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1]
+                      effective_data = tmp_data.iloc[kk,a*2+1]
                       break
 
               tmp_list.append(effective_data)
@@ -150,33 +172,27 @@ def match_date(data, date):
                       if delta.days > 0:
                           break
 
-                      if str(data.iloc[index + j,a*2+1]) != "nan" and str(data.iloc[index + j,a*2+1]) != "None" and data.iloc[index + j,a*2+1] != 0:
+                      if str(data.iloc[index + j,a*2+1]) != "nan" and str(data.iloc[index + j,a*2+1]) != "None" and str(data.iloc[index + j,a*2+1]) != "0" and data.iloc[index+j,a*2+1] != 0:
                           delta_list.append(delta.days)
 
-                  if len(delta_list) > 1:
+                  if len(delta_list) > 0:
                       for j in range(len(delta_list)):
                           if delta_list[j] == max(delta_list):
 
                               tmp_date = today + datetime.timedelta(delta_list[j])
                               tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
+                              tmp_data = data[data[product_name + "_date"] == tmp_date]
 
                               #if today has multiple data, use only the first useful data. If no useful data, effective date
                               #and effective data remain unchanged
-                              if data[data[product_name + "_date"] == tmp_date].shape[0] > 1:
-                                  for kk in range(data[data[product_name + "_date"] == tmp_date].shape[0]):
-                                      if str(data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1]) != "nan" and data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1] != 0:
-                                          effective_date = tmp_date
-                                          effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
-                                          break
-                              else:
-                                  if data[data[product_name + "_date"] == tmp_date].iloc[0,a*2+1] != 0:
+                              for kk in range(tmp_data.shape[0]):
+                                  if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
                                       effective_date = tmp_date
-                                      effective_data = data[data[product_name + "_date"] == effective_date].iloc[0,a*2+1]
+                                      effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
+                                      break
+                              break
 
-                              tmp_list.append(effective_data)
-                  else:
-                      tmp_list.append(effective_data)
-
+                  tmp_list.append(effective_data)
                   flag = 1
 
               else:
@@ -195,22 +211,22 @@ def match_date(data, date):
                   if len(delta_list) > 0:
                       for j in range(len(delta_list)):
                           if delta_list[j] == max(delta_list):
+
                               tmp_date = today + datetime.timedelta(delta_list[j])
                               tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
+                              tmp_data = data[data[product_name + "_date"] == tmp_date]
 
-                              if data[data[product_name + "_date"] == tmp_date].shape[0] > 1:
-                                  for kk in range(data[data[product_name + "_date"] == tmp_date].shape[0]):
-                                      if str(data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1]) != "nan" and data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1] != 0:
-                                          effective_date = tmp_date
-                                          effective_data = data[data[product_name + "_date"] == tmp_date].iloc[kk,a*2+1]
-                                          break
-                              else:
-                                  if data[data[product_name + "_date"] == tmp_date].iloc[0,a*2+1] != 0:
+                              #if today has multiple data, use only the first useful data. If no useful data, effective date
+                              #and effective data remain unchanged
+                              for kk in range(tmp_data.shape[0]):
+                                  if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
                                       effective_date = tmp_date
-                                      effective_data = data[data[product_name + "_date"] == effective_date].iloc[0,a*2+1]
+                                      effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
+                                      break
+                              break
 
-                              tmp_list.append(effective_data)
-                  else:
-                      tmp_list.append(effective_data)
+                  tmp_list.append(effective_data)
                   flag = 1
+
       output[product_name] = tmp_list 
+  return output 
