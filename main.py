@@ -107,18 +107,29 @@ if__name__== "__main__:
                   tmp_true_and_pred.index+=1
           true_and_pred = pd.concat([true_and_pred,tmp_true_and_pred], axis=1)
 
-          if regression == True:
-              r2.append(r2_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,2].dropna()))
-          else:
-              accuracy.append(accuracy_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
-              precision.append(precision_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
-              recall.append(recall_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
-              f1.append(f1_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
-
-
           #calculate daily return
 
-          tmp_output = calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period)
+          tmp_output, tmp_opt_marker = calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period)
+
+
+          if rtn_period == 1:
+              if regression == True:
+                  r2.append(r2_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,2].dropna()))
+              else:
+                  accuracy.append(accuracy_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
+                  precision.append(precision_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
+                  recall.append(recall_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
+                  f1.append(f1_score(tmp_true_and_pred.iloc[:,0].dropna(), tmp_true_and_pred.iloc[:,1].dropna()))
+          else:
+              tmp_true = []
+              tmp_pred = []
+              for abcdefg in range(opt_marker.shape[0]):
+                  if tmp_opt_marker.iloc[abcefg] == 1 and str(tmp_true_and_pred.iloc[abcdefg,1]) != "nan":
+                      tmp_true.append(tmp_true_and_pred.iloc[abcdefg,0])
+                      tmp_pred.append(tmp_true_and_pred.iloc[abcdefg,1])
+
+              accuracy.append(accuracy_score(tmp_true, tmp_pred))
+
 
           if tmp_output.shape[0] < output.shape[0]:
               for abcdefg in range(output.shape[0] - tmp_output.shape[0]):
