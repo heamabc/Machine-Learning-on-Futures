@@ -13,16 +13,27 @@ Available information includes:
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
 
 Features:
+  Basis Momentum: culmulative return of spot - culmulative returne of futures
+  Bias Response Line: (price - moving average)/moving average * 100
+  Inventory Percentage Change
+  Return Signal Momentum: probability of positive return over the past r days
+  Roll Return: (ln(spot) - ln(futures))*365/(maturity date - today)
+  Open to Open return
+  Close to Close return
+  Warehouse Receipt Precentage Change
+  
 
 Strategy:
   In this project, I would use machine learning model to predict 37 commodity futures price with features mentioned above.
   
-  Reasoning for data engineering: I assume that there is some relationship between the features and the price movement. 
+  Reasoning for data engineering: 
+  I assume that there is some relationship between the features and the price movement. 
   However, Raw data is not enough to predict price movement. I assume that relationship of trend or reversal of price with a 
   periodic features is existed. Therefore, All features are calculated in several period, Eg, 5 days, 10 days. 
   Label is defined as two classes. If price has increased, marked as positive, else, marked as negativel.
   
-  Reasoning for Machine learning process: Use one year data as training set, 20 days data as test set. The prediction is rolling, 
+  Reasoning for Machine learning process: 
+  Use one year data as training set, 20 days data as test set. The prediction is rolling, 
   using a non-enchore walk forward method to predict futures price.
   The reason for walk forward method is that the relationship between features and label may be changed in different timeframe.
   Optimize and train the model in every step of the walk forward to ensure high quality of prediction. Cross validation is included
