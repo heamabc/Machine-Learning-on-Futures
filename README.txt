@@ -1,13 +1,15 @@
 # ML_futures
 
-This is a machine learning project on predicting the commodity futures price.
-
-Use as much information available to generate features and use these features to predict commodity futures price.
+This is a machine learning project on predicting the commodity futures price. it uses as much information available to generate features and use these features to predict commodity futures price.
 
 Available information includes:
-
-  Date, Option Code: each commodity futures has its own Option Code, Close Price, Open Price, Inventory, Warehouse Receipt
-  
+  Date
+  Option Code: each commodity futures has its own Option Code
+  Spot Price
+  Close Price: rolling major contracts
+  Open Price: rolling major contracts
+  Inventory
+  Warehouse Receipt
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
 
 
