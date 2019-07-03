@@ -3,43 +3,44 @@ import numpy as np
 import datetime
 
 def basis_momentum(sp, fp, periods):
-  '''
-  basis momentum: the difference of r days culmulative return of nearby futures and farther futures.
-  
-  Parameters
-  ----------
-  sp: pd.DataFrame
+    '''
+    basis momentum: the difference of r days culmulative return of nearby futures and farther futures.
+
+    Parameters
+    ----------
+    sp: pd.DataFrame
       first column is date, all other columns are nearby futures price.
-  fp : pd.DataFrame
+    fp : pd.DataFrame
       first column is date, all other columns are farther futures price.
-  periods: list
+    periods: list
       list of periods of basis momentum to be calculated
-      
-  Returns
-  ----------
-  pd.DataFrame
+
+    Returns
+    ----------
+    pd.DataFrame
       first column is date, all other are basis momentum
-  '''
-  output = pd.DataFrame()
-  output["date"] = fp.iloc[:,0]
-  sp = sp.iloc[:,1:]
-  fp = fp.iloc[:,1:]
+    '''
+    output = pd.DataFrame()
+    output["date"] = fp.iloc[:,0]
+    sp = sp.iloc[:,1:]
+    fp = fp.iloc[:,1:]
 
-  for j in tqdm(range(fp.shape[1])):
-      for r in periods:
-          tmplist = []
-          for i in range(r-1):
-              tmplist.append(None)
+    for j in range(fp.shape[1]):
+        for r in periods:
+            tmplist = []
+            for i in range(r):
+                tmplist.append(None)
 
-          for i in range(r-1,fp.shape[0]):
-              if str(sp.iloc[i-r+1,j]) == "nan" or str(fp.iloc[i-r+1,j]) == "nan":
-                  tmplist.append(None)
-                  continue           
+            for i in range(r,fp.shape[0]):
+                if str(sp.iloc[i-r,j]) == "nan" or str(fp.iloc[i-r,j]) == "nan":
+                    tmplist.append(None)
+                    continue           
 
-              tmplist.append(float(sp.iloc[i,j])/float(sp.iloc[i-r+1,j]) - float(fp.iloc[i,j])/float(fp.iloc[i-r+1,j]))
+                tmplist.append(float(sp.iloc[i,j])/float(sp.iloc[i-r,j]) - float(fp.iloc[i,j])/float(fp.iloc[i-r,j]))
 
-          output[fp.iloc[:,j].name + "_" + str(r)] = tmplist
- return output
+            output[fp.iloc[:,j].name + "_" + str(r)] = tmplist
+    return output
+
 
 def bias(data, periods):
     '''
@@ -52,7 +53,7 @@ def bias(data, periods):
 
     for j in range(data.shape[1]):
         for period in periods:
-            ma = pd.rolling_mean(data,period)
+            ma = data.rolling(period).mean()
             product_name = data.iloc[:,j].name
 
             output[product_name + "_" + str(period)] = (data.iloc[:,j] - ma.iloc[:,j])/ma.iloc[:,j] * 100
@@ -63,14 +64,14 @@ def ln_price(data):
     output = pd.DataFrame(data.iloc[:,0])
     output = pd.concat([output,np.log(data.iloc[:,1:])], axis=1)
     return output
-  
-  
+
+
 def return_signal_momentum(data, periods):
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
     data = data.iloc[:,1:]
 
-    rtn = data.pct_change()
+    data = data.pct_change()
     for j in range(data.shape[1]):
         product_name = data.iloc[:,j].name
         for r in periods:
@@ -81,15 +82,15 @@ def return_signal_momentum(data, periods):
                 elif str(data.iloc[i-r,j]) == "nan":
                     tmplist.append(None)
                 else:
-                    tmpdata = rtn.iloc[i-r:i,j]
+                    tmpdata = data.iloc[i-r:i,j]
                     count = 0
                     for d in tmpdata:
                         if d >= 0:
                             count += 1
                     tmplist.append(count/r)
             output[product_name + "_" + str(r)] = tmplist
-   return output
-
+    return output
+            
 
 def roll_rtn(sp, fp, ss):
     '''
@@ -123,8 +124,8 @@ def roll_rtn(sp, fp, ss):
     tmp_output = (np.log(sp) - np.log(fp))*365/diff
     output = pd.concat([output, tmp_output], axis=1)
     return output
-  
-  
+
+
 def rsi(data, periods):
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
@@ -157,10 +158,14 @@ def rsi(data, periods):
             output = pd.concat([output,pd.Series(tmplist)], axis=1)
     return output
 
+
 def seasonality(data): 
+    '''
+    Return the year-to-year percentage change
+    '''
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
-    
+
     for j in range(1,data.shape[1]):
         first_date = datetime.datetime.strptime(data.iloc[data.iloc[:,j].first_valid_index(),0],"%m/%d/%Y")
         last_date = datetime.datetime.strptime(data.iloc[-1,0],"%m/%d/%Y")
@@ -197,8 +202,28 @@ def seasonality(data):
                     delta = tmp_date - last_year
                     delta_list.append(abs(delta.days))
 
-
                 index = [index for index, d in enumerate(delta_list) if d == min(delta_list)]
-                tmplist.append(data.iloc[i,j]/data.iloc[i-252+ minn + index[0],j] - 1)  
+                if data.iloc[i,j] != 0 and data.iloc[i-252+ minn + index[0],j] == 0:
+                    if data.iloc[i,j] > 0:
+                        tmplist.append(1)
+                    else:
+                        tmplist.append(-1)
+                elif data.iloc[i,j] == 0 and data.iloc[i-252+minn+index[0],j] == 0:
+                    tmplist.append(0)
+                else:
+                    tmplist.append(data.iloc[i,j]/data.iloc[i-252+ minn + index[0],j] - 1)  
         output[data.iloc[:,j].name] = tmplist
+    return output
+
+
+def signalizer(data, benchmark):
+    '''
+    Binarize data according to the benchmark.
+    Mark 1 if higher than benchmark, mark 0 if lower than benchmark
+    '''
+    output = pd.DataFrame()
+    output['date'] = data.iloc[:,0]
+    for j in range(1,data.shape[1]):
+        output[data.iloc[:,j].name] = data.iloc[:,j].apply(lambda x: 1 if x>=benchmark else 0 if x < benchmark else None)
+        
     return output
