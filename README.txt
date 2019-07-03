@@ -23,7 +23,7 @@ Features:
 	Close to Close return : period = 5,10,15,20,25,30,35,40,45,50
 	Warehouse Receipt Precentage Change : period = 5,10,15,20,25,30,35,40,45,50
 	Seasonality Features:
-    	Inventory year-to-year Percentage Change
+    Inventory year-to-year Percentage Change
         Warehouse Receipt year-to-year Percentage Change
         Roll Return year-to-year Percentage Change
 
