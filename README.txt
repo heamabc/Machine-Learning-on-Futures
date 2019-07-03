@@ -1,4 +1,5 @@
 # ML_futures
+Environment: python 3
 
 This is a machine learning project on predicting the commodity futures price. it uses as much information available to generate features and use these features to predict commodity futures price.
 
