@@ -62,36 +62,46 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     '''
     X = []
     dtypelist = []
-    data0 = pd.read_csv(r"D:\QuantChina\ML\signal_data\close_price_bw_pct_change_preprocessed.csv")
+    
+        data0 = pd.read_csv(r"D:\QuantChina\ML\signal_data\close_price_bw_pct_change_preprocessed.csv")
+    #5,10,15,20,25,30,35,40,45,50
     X.append(data0)
     dtypelist.append("rtn_cc")
+    
     data1 = pd.read_csv(r"D:\QuantChina\ML\signal_data\open_price_bw_pct_change_preprocessed.csv")
+    #5,10,15,20,25,30,35,40,45,50
     X.append(data1)
     dtypelist.append("rtn_oo")
+    
     data2 = pd.read_csv(r"D:\QuantChina\ML\signal_data\time_series_momentum_data_preprocessed.csv")
     X.append(data2)
     dtypelist.append("tsm")
     #5,10,15,20,25,30,35,40,45,50,55,60
+    
     '''
     data3 = pd.read_csv(r"D:\QuantChina\ML\signal_data\time_series_momentum_cross_section.csv")
     X.append(data3)
     dtypelist.append("tsc")
     #5,10,15,20,25,30,35,40,45,50,55,60
     '''
+    
     data4 = pd.read_csv(r"D:\QuantChina\ML\signal_data\return_signal_momentum_data_preprocessed.csv")
     X.append(data4)
     dtypelist.append("rs")
     #5,10,15,20,25,30,35,40,45,50,55,60
+    
     data5 = pd.read_csv(r"D:\QuantChina\ML\signal_data\mixed_momentum_signal.csv")
     X.append(data5)
     dtypelist.append("mm")
     #5,10,15,20,25,30,35,40,45,50,55,60
+    
     '''
     data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_cross_section.csv")
     X.append(data6)
     dtypelist.append("rr")
     #1
     '''
+    
     data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_data_preprocessed.csv")
     X.append(data6)
     dtypelist.append("rr")
@@ -100,7 +110,7 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     data7 = pd.read_csv(r"D:\QuantChina\ML\signal_data\basis_momentum_data_preprocessed.csv")
     X.append(data7)
     dtypelist.append("bm")
-    #20,40,60,80,100,120,140,160,180
+    #5,10,15,20,25,30,35,40,45,50
     '''
     data8 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_cross_section.csv")
     X.append(data8)
@@ -115,18 +125,33 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     X.append(data11)
     dtypelist.append("inv_s")
     #5,10,15,20,25,30,35,40,45,50
-    data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_pct_change_preprocessed.csv")
+    
+    data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_bw_pct_change_preprocessed.csv")
     X.append(data12)
     dtypelist.append("wr_s")
     #5,10,15,20,25,30,35,40,45,50
-    data13 = pd.read_csv(r"D:\QuantChina\ML\signal_data\rsi_close_price_data_preprocessed.csv")
+    
+    data13 = pd.read_csv(r"D:\QuantChina\ML\signal_data\rsi_open_price_data_preprocessed.csv")
     X.append(data13)
     dtypelist.append("rsi")
     #5,10,15,20,25,30,35,40,45,50
-    data14 = pd.read_csv(r"D:\QuantChina\ML\signal_data\bias_close_price_data_preprocessed.csv")
+    
+    data14 = pd.read_csv(r"D:\QuantChina\ML\signal_data\bias_open_price_data_preprocessed.csv")
     X.append(data14)
     dtypelist.append("bias")
     #5,10,15,20,25,30,35,40,45,50
+    
+    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality.csv")
+    X.append(data15)
+    dtypelist.append("sea_inv")
+    
+    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality.csv")
+    X.append(data16)
+    dtypelist.append("sea_wr")
+    
+    data17 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_seasonality.csv")
+    X.append(data17)
+    dtypelist.append("sea_rr")
     
     if regression == True or clipping == True:
         ydata = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_cc_data.csv")
