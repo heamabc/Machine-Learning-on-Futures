@@ -12,16 +12,21 @@ Available information includes:
   Warehouse Receipt
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
 
+
 Features:
-  Basis Momentum: culmulative return of spot - culmulative returne of futures
-  Bias Response Line: (price - moving average)/moving average * 100
-  Inventory Percentage Change
-  Return Signal Momentum: probability of positive return over the past r days
+  Basis Momentum: culmulative return of spot - culmulative returne of futures : period = 5,10,15,20,25,30,35,40,45,50
+  Bias Response Line: (price - moving average)/moving average * 100 : period = 5,10,15,20,25,30,35,40,45,50
+  Return Signal Momentum: probability of positive return over the past r days : period = 5,10,15,20,25,30,35,40,45,50
   Roll Return: (ln(spot) - ln(futures))*365/(maturity date - today)
-  Open to Open return
-  Close to Close return
-  Warehouse Receipt Precentage Change
-  
+  Inventory Percentage Change : period = 5,10,15,20,25,30,35,40,45,50
+  Open to Open return : period = 5,10,15,20,25,30,35,40,45,50
+  Close to Close return : period = 5,10,15,20,25,30,35,40,45,50
+  Warehouse Receipt Precentage Change : period = 5,10,15,20,25,30,35,40,45,50
+  Seasonality Features:
+      Inventory year-to-year Percentage Change
+      Warehouse Receipt year-to-year Percentage Change
+      Roll Return year-to-year Percentage Change
+
 
 Strategy:
   In this project, I would use machine learning model to predict 37 commodity futures price with features mentioned above.
@@ -40,6 +45,7 @@ Strategy:
   in the optimization and training process to prevent overfitting.
   
   Currently, only xgboost is used as leaning machine. It is becauseXgboost usually has high performance in classification task. 
+ 
  
 Vision Board:
   More data engineering to increase relationship between features and label (clipping, better outlier detection, pca)
