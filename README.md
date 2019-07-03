@@ -6,17 +6,7 @@ Use as much information available to generate features and use these features to
 
 Available information includes:
 
-  Date
-  
-  Option Code: each commodity futures has its own Option Code
-  
-  Close Price
-  
-  Open Price
-  
-  Inventory
-  
-  Warehouse Receipt
+  Date, Option Code: each commodity futures has its own Option Code, Close Price, Open Price, Inventory, Warehouse Receipt
   
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
 
