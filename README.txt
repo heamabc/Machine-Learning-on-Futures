@@ -7,8 +7,8 @@ Available information includes:
   Date
   Option Code: each commodity futures has its own Option Code
   Spot Price
-  Close Price: rolling major contracts
-  Open Price: rolling major contracts
+  Close Price: rolling month-to-month contracts
+  Open Price: rolling month-to-month contracts
   Inventory
   Warehouse Receipt
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
@@ -19,6 +19,7 @@ Features:
 	Bias Response Line: (price - moving average)/moving average * 100 : period = 5,10,15
 	Return Signal Momentum: probability of positive return over the past r days : period = 5,10,15
 	Roll Return: (ln(spot) - ln(futures))*365/(maturity date - today)
+	Time Series Momentum : culmulative return 
 	Inventory Percentage Change : period = 5,10,15
 	Open to Open return : period = 5,10,15
 	Close to Close return : period = 5,10,15
