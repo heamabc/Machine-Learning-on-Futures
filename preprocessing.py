@@ -86,7 +86,7 @@ def rank_engine(data):
     for k in range(int(data.shape[1]/length)):
         tmp_data = pd.DataFrame()
         for j in range((length)):
-            tmp = data.iloc[:,j*(data.shape[1]/length) + k]
+            tmp = data.iloc[:,j*(int(data.shape[1]/length)) + k]
             tmp_data = pd.concat([tmp_data,tmp], axis=1)
 
         tmp_data = tmp_data.rank(axis=1,method="first", ascending=False)
