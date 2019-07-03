@@ -161,7 +161,7 @@ def seasonality(data):
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
     
-    for j in tqdm(range(1,data.shape[1])):
+    for j in range(1,data.shape[1]):
         first_date = datetime.datetime.strptime(data.iloc[data.iloc[:,j].first_valid_index(),0],"%m/%d/%Y")
         last_date = datetime.datetime.strptime(data.iloc[-1,0],"%m/%d/%Y")
         tmplist = []
