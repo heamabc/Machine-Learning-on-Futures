@@ -90,31 +90,38 @@ def return_signal_momentum(data, periods):
             output[product_name + "_" + str(r)] = tmplist
    return output
 
-def roll_rtn(data, option_code, data):
+
+def roll_rtn(sp, fp, ss):
     '''
     Parameters
-    --------------
-    data: columns = ["OptionCode", "EndDate", "SettlementDate", "ClosePrice", "CommPrice"]
+    ------------
+    sp: pd.DataFrame
+      1 col = date, all other col are corresponding spot price
+    fp : pd.DataFrame
+      1 col = date, all other col are corresponding futures price
+    ss: pd.DataFrame
+      1 col = date, all other col are corresponding settlement date
+      
+    Return
+    -------------
+    pd.DataFrame
+      1 col = date, all other col are corresponding roll return
     '''
     output = pd.DataFrame()
-    output["date"] = data[data["OptionCode"] == 305].iloc[:,1]
+    output['date'] = sp.iloc[:,0]
     
-    for option_code in codelist.iloc[:,0]:
-    tmplist = []
-    tmp_data = data[data["OptionCode"] == option_code]
-    if tmp_data.shape[0] < output.shape[0]:
-        for abc in range(output.shape[0] - tmp_data.shape[0]):
-            tmplist.append(None)
-            
-    for i in range(tmp_data.shape[0]):
-        tdy = datetime.datetime.strptime(tmp_data.iloc[i,1], "%m/%d/%Y")
-        settlement = datetime.datetime.strptime(tmp_data.iloc[i,2], "%m/%d/%Y")
-        delta = settlement - tdy
-        
-        tmplist.append((np.log(float(tmp_data.iloc[i,4])) - np.log(float(tmp_data.iloc[i,3])))*365/delta.days)
-        
-            
-        output[option_code] = tmplist
+    diff = pd.DataFrame()
+    for j in range(1,ss.shape[1]):
+        tmplist = []
+        for i in range(ss.shape[0]):
+            delta = datetime.datetime.strptime(ss.iloc[i,1],"%m/%d/%Y") - datetime.datetime.strptime(ss.iloc[i,0],"%m/%d/%Y")
+            tmplist.append(delta.days)
+        diff[ss.iloc[:,j].name[:3]] = tmplist
+    
+    sp = sp.iloc[:,1:]
+    fp = fp.iloc[:,1:]
+    tmp_output = (np.log(sp) - np.log(fp))*365/diff
+    output = pd.concat([output, tmp_output], axis=1)
     return output
   
   
@@ -148,4 +155,50 @@ def rsi(data, periods):
 
                     tmplist.append( (np.sum(up)/period) /((np.sum(up)/period) + abs(np.sum(down)/period) )*100)
             output = pd.concat([output,pd.Series(tmplist)], axis=1)
+    return output
+
+def seasonality(data): 
+    output = pd.DataFrame()
+    output["date"] = data.iloc[:,0]
+    
+    for j in tqdm(range(1,data.shape[1])):
+        first_date = datetime.datetime.strptime(data.iloc[data.iloc[:,j].first_valid_index(),0],"%m/%d/%Y")
+        last_date = datetime.datetime.strptime(data.iloc[-1,0],"%m/%d/%Y")
+        tmplist = []
+        for i in range(data.shape[0]):
+            today = datetime.datetime.strptime(data.iloc[i,0], "%m/%d/%Y")
+
+            if today < first_date:
+                tmplist.append(np.nan)
+                continue
+            else:
+                delta = today - first_date
+                if delta.days < 365:
+                    tmplist.append(np.nan)
+                    continue
+
+                delta = last_date - today
+                if delta.days < 365:
+                    tmplist.append(np.nan)
+                    continue
+
+                delta_list = []
+
+                if today.month == 2 and today.day == 29:
+                    last_year = today.replace(year = today.year - 1,day = 28)
+                else:
+                    last_year = today.replace(year = today.year - 1)
+                if i - 252 -20< 0:
+                    minn = 252 - i
+                else:
+                    minn = -20
+                for abc in range(minn,21):
+                    tmp_date = datetime.datetime.strptime(data.iloc[i-252+abc,0], "%m/%d/%Y")
+                    delta = tmp_date - last_year
+                    delta_list.append(abs(delta.days))
+
+
+                index = [index for index, d in enumerate(delta_list) if d == min(delta_list)]
+                tmplist.append(data.iloc[i,j]/data.iloc[i-252+ minn + index[0],j] - 1)  
+        output[data.iloc[:,j].name] = tmplist
     return output
