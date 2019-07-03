@@ -83,7 +83,7 @@ def rank_engine(data):
     a = pd.Series(a)
     length = a.nunique()
 
-    for k in range(data.shape[1]/length):
+    for k in range(int(data.shape[1]/length)):
         tmp_data = pd.DataFrame()
         for j in range((length)):
             tmp = data.iloc[:,j*(data.shape[1]/length) + k]
@@ -128,7 +128,7 @@ def match_date(data, date):
     effective_date = ""
     effective_data = None
 
-    for a in range(data.shape[1]/2):
+    for a in range(int(data.shape[1]/2)):
         product_name = str(data.iloc[:,a*2].name[0:3])
         tmp_list = []
         flag = 0
