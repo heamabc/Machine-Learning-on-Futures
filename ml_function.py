@@ -4,9 +4,7 @@ import numpy as np
 import math
 import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV 
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import GridSearchCV, train_test_split, ParameterGrid
 
 #initialize function
 def initialize():
@@ -21,7 +19,7 @@ def initialize():
     '''
     
     codelist = pd.read_csv(r"D:\QuantChina\product_name.csv", usecols= ["code"])
-    date = pd.read_csv(r"D:\QuantChina\ML\signal_data\time_series_momentum_data.csv", usecols = [0])
+    date = pd.read_csv(r"D:\QuantChina\ML\rtn_data\all_rtn_data.csv", usecols = [0])
 
     output = pd.DataFrame()
     true_and_pred = pd.DataFrame()
@@ -32,8 +30,8 @@ def initialize():
     f1 = []
     r2 = []
 
-    output["date"] = date
-    true_and_pred["date"] = date 
+    output["date"] = date.iloc[:,0]
+    true_and_pred["date"] = date.iloc[:,0]
     
     return codelist, output, true_and_pred, period_list, accuracy, precision, recall, f1, r2
     
@@ -60,103 +58,119 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
         the first to the second last columns are features, the last column is label
         no None or nan data included, all data is valid
     '''
+    product_name = str(codelist.iloc[k,0])
+        
     X = []
     dtypelist = []
     
-        data0 = pd.read_csv(r"D:\QuantChina\ML\signal_data\close_price_bw_pct_change_preprocessed.csv")
-    #5,10,15,20,25,30,35,40,45,50
+    '''
+    data0 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\close_price_preprocessed.csv")
+    #5,10,15
     X.append(data0)
     dtypelist.append("rtn_cc")
-    
-    data1 = pd.read_csv(r"D:\QuantChina\ML\signal_data\open_price_bw_pct_change_preprocessed.csv")
-    #5,10,15,20,25,30,35,40,45,50
+
+    data1 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\open_price_preprocessed.csv")
+    #5,10,15
     X.append(data1)
     dtypelist.append("rtn_oo")
-    
-    data2 = pd.read_csv(r"D:\QuantChina\ML\signal_data\time_series_momentum_data_preprocessed.csv")
-    X.append(data2)
-    dtypelist.append("tsm")
-    #5,10,15,20,25,30,35,40,45,50,55,60
-    
-    '''
-    data3 = pd.read_csv(r"D:\QuantChina\ML\signal_data\time_series_momentum_cross_section.csv")
-    X.append(data3)
-    dtypelist.append("tsc")
-    #5,10,15,20,25,30,35,40,45,50,55,60
-    '''
-    
-    data4 = pd.read_csv(r"D:\QuantChina\ML\signal_data\return_signal_momentum_data_preprocessed.csv")
+
+    data4 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\return_signal_momentum_preprocessed.csv")
     X.append(data4)
     dtypelist.append("rs")
-    #5,10,15,20,25,30,35,40,45,50,55,60
-    
-    data5 = pd.read_csv(r"D:\QuantChina\ML\signal_data\mixed_momentum_signal.csv")
-    X.append(data5)
-    dtypelist.append("mm")
-    #5,10,15,20,25,30,35,40,45,50,55,60
-    
-    '''
-    data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_cross_section.csv")
+    #5,10,15
+
+    data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\roll_rtn_preprocessed.csv")
     X.append(data6)
     dtypelist.append("rr")
     #1
-    '''
-    
-    data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_data_preprocessed.csv")
-    X.append(data6)
-    dtypelist.append("rr")
-    #1
-    
-    data7 = pd.read_csv(r"D:\QuantChina\ML\signal_data\basis_momentum_data_preprocessed.csv")
+
+    data7 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\basis_momentum_preprocessed.csv")
     X.append(data7)
     dtypelist.append("bm")
-    #5,10,15,20,25,30,35,40,45,50
+    #5,10,15
+
+    data11 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\inventory_preprocessed.csv")
+    X.append(data11)
+    dtypelist.append("inv_s")
+    #5,10,15
+
+    data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\warehouse_receipt_preprocessed.csv")
+    X.append(data12)
+    dtypelist.append("wr_s")
+    #5,10,15
+
+    data13 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\rsi_preprocessed.csv")
+    X.append(data13)
+    dtypelist.append("rsi")
+    #5,10,15
+
+    data14 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\bias_preprocessed.csv")
+    X.append(data14)
+    dtypelist.append("bias")
+    #5,10,15
     '''
-    data8 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_cross_section.csv")
-    X.append(data8)
-    dtypelist.append("inv")
-    #10,20,30,40,50,60,70,80,90,100
-    data9 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_cross_section.csv")
-    X.append(data9)
-    dtypelist.append("wr")
-    #10,20,30,40,50,60,70,80,90,100
-    '''
+    data0 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\close_price_bw_pct_change_preprocessed.csv")
+    #5,10,15
+    X.append(data0)
+    dtypelist.append("rtn_cc")
+
+    data1 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_bw_pct_change_preprocessed.csv")
+    #5,10,15
+    X.append(data1)
+    dtypelist.append("rtn_oo")
+
+    data4 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\return_signal_momentum_preprocessed.csv")
+    X.append(data4)
+    dtypelist.append("rs")
+    #5,10,15
+
+    data6 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_preprocessed.csv")
+    X.append(data6)
+    dtypelist.append("rr")
+    #1
+
+    data7 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\basis_momentum_preprocessed.csv")
+    X.append(data7)
+    dtypelist.append("bm")
+    #5,10,15
+
     data11 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_bw_pct_change_preprocessed.csv")
     X.append(data11)
     dtypelist.append("inv_s")
-    #5,10,15,20,25,30,35,40,45,50
-    
+    #5,10,15
+
     data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_bw_pct_change_preprocessed.csv")
     X.append(data12)
     dtypelist.append("wr_s")
-    #5,10,15,20,25,30,35,40,45,50
-    
-    data13 = pd.read_csv(r"D:\QuantChina\ML\signal_data\rsi_open_price_data_preprocessed.csv")
+    #5,10,15
+
+    data13 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\rsi_preprocessed.csv")
     X.append(data13)
     dtypelist.append("rsi")
-    #5,10,15,20,25,30,35,40,45,50
-    
-    data14 = pd.read_csv(r"D:\QuantChina\ML\signal_data\bias_open_price_data_preprocessed.csv")
+    #5,10,15
+
+    data14 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\bias_preprocessed.csv")
     X.append(data14)
     dtypelist.append("bias")
-    #5,10,15,20,25,30,35,40,45,50
+    #5,10,15
     
-    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality.csv")
+    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality_preprocessed.csv")
     X.append(data15)
     dtypelist.append("sea_inv")
-    
-    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality.csv")
+
+    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality_preprocessed.csv")
     X.append(data16)
     dtypelist.append("sea_wr")
-    
-    data17 = pd.read_csv(r"D:\QuantChina\ML\signal_data\roll_rtn_seasonality.csv")
+
+    data17 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_seasonality_preprocessed.csv")
     X.append(data17)
     dtypelist.append("sea_rr")
+
     
     if regression == True or clipping == True:
         ydata = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_cc_data.csv")
     else:
-        ydata = pd.read_csv(r"D:\QuantChina\ML\signal_data\open_price_fw_pct_change_5.csv")  
+        ydata = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change_5_signal.csv")  
     
     
     if clipping == True:
@@ -171,7 +185,6 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
                 tmp_ydata.append(None)
         ydata = tmp_ydata
     
-    product_name = str(codelist.iloc[k,0])
     X_df = pd.DataFrame()
 
     for abc in range(len(X)):
@@ -240,12 +253,13 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
     '''    
     #if opt_marker = 1, act according to prediction, if 0, use last prediction
     #make periodic position
-    tmp_opt_marker = opt_marker.copy()
+    tmp_opt_marker = pd.Series(opt_marker.tolist())
     for abcdefg in range(tmp_opt_marker.shape[0]):
         if tmp_opt_marker.iloc[abcdefg] == 1:
             if abcdefg + rtn_period < tmp_opt_marker.shape[0]:
                 tmp_opt_marker.iloc[abcdefg + rtn_period] = 1
-            
+
+
     tmp_tmp_true_and_pred = []
     difference = tmp_opt_marker.shape[0] - tmp_true_and_pred.shape[0]
     for abcdefg in range(tmp_opt_marker.shape[0]):
@@ -253,15 +267,20 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
             continue
         if tmp_opt_marker.iloc[abcdefg] == 1:
             for cba in range(rtn_period):
-                if len(tmp_tmp_true_and_pred) + 1 <= tmp_true_and_pred.shape[0] and abcdefg-difference+cba < tmp_true_and_pred.iloc[:,0].shape[0]:
-                tmp_tmp_true_and_pred.append(tmp_true_and_pred.iloc[abcdefg - difference,1])
-                
+                if len(tmp_tmp_true_and_pred) + 1 <= tmp_true_and_pred.shape[0] and abcdefg-difference+cba < tmp_true_and_pred.shape[0]:
+                    if str(tmp_true_and_pred.iloc[abcdefg-difference + cba, 0]) != "nan":
+                        tmp_tmp_true_and_pred.append(tmp_true_and_pred.iloc[abcdefg - difference,1])
+                    else:
+                        tmp_tmp_true_and_pred.append(None)
+    
+    '''
     if len(tmp_tmp_true_and_pred) < tmp_true_and_pred.shape[0]:
         tmp_true_and_pred = tmp_true_and_pred.iloc[tmp_true_and_pred.shape[0] - len(tmp_tmp_true_and_pred):]
+    '''
     
     #read return data
     rtn_data = pd.read_csv(r"D:\QuantChina\ML\rtn_data\all_rtn_data.csv",usecols = [k*3+1,k*3+2,k*3+3])
-
+    
     tmp_output = pd.DataFrame()
     tmp_output[product_name + "_true_value"] = tmp_true_and_pred.iloc[:,0]
     tmp_output[product_name + "_position"] = tmp_tmp_true_and_pred
@@ -274,9 +293,12 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
     
     daily_rtn = []
     
+    flag = 0
     for i in range(tmp_output.shape[0]):
-        if str(tmp_output[product_name + "_position"].iloc[i]) == "nan":
+        if str(tmp_output[product_name + "_position"].iloc[i]) == "nan" and flag == 0:
             daily_rtn.append(None)
+        elif str(tmp_output[product_name + "_position"].iloc[i]) == "nan" and flag == 1:
+            daily_rtn.append(0)
 
         elif i == 0:
             if tmp_output[product_name + "_position"].iloc[i] == 1:
@@ -286,6 +308,7 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
             else:
                 daily_rtn.append(-tmp_output[product_name + "_rtn_co"].iloc[i]) 
         elif tmp_output[product_name + "_position"].iloc[i] == 1:
+            flag = 1
             if tmp_output[product_name + "_position"].iloc[i-1] == 1:
                 daily_rtn.append(tmp_output[product_name + "_rtn_cc"].iloc[i])
             elif tmp_output[product_name + "_position"].iloc[i-1] == 0:
@@ -293,6 +316,7 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
             else:
                 daily_rtn.append((1-tmp_output[product_name + "_rtn_olc"].iloc[i])*(1+tmp_output[product_name + "_rtn_co"].iloc[i])-1)
         elif tmp_output[product_name + "_position"].iloc[i] == 0:
+            flag = 1
             if tmp_output[product_name + "_position"].iloc[i-1] == 1:
                 daily_rtn.append(tmp_output[product_name + "_rtn_olc"].iloc[i])
             elif tmp_output[product_name + "_position"].iloc[i-1] == 0:
@@ -300,6 +324,7 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
             else:
                 daily_rtn.append(-tmp_output[product_name + "_rtn_olc"].iloc[i])
         else:
+            flag = 1
             if tmp_output[product_name + "_position"].iloc[i-1] == 1:
                 daily_rtn.append((1+tmp_output[product_name + "_rtn_olc"].iloc[i])*(1-tmp_output[product_name + "_rtn_co"].iloc[i])-1)
             elif tmp_output[product_name + "_position"].iloc[i-1] == 0:
@@ -318,7 +343,7 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
     cum_rtn = cum_rtn[1:]
     tmp_output[product_name + "_cum_rtn"] = cum_rtn
     
-    return tmp_output
+    return tmp_output, tmp_opt_marker
 
 
 #calculate the sumyield of the portfolio
@@ -344,7 +369,7 @@ def calc_sumyield(output, date, codelist):
     '''
     rtn = pd.DataFrame()
     tmp_rtn = pd.DataFrame()
-    
+
     tmp_rtn["date"] = date
     for a in range(codelist.shape[0]):
         product_name = str(codelist.iloc[a,0])
@@ -372,7 +397,7 @@ def calc_sumyield(output, date, codelist):
         if flag == 1:
             t_cum_rtn.append(t_cum_rtn[-1]*(1+t_daily_rtn[-1]))
         elif str(t_daily_rtn[-1]) == "nan":
-            t_cum_rtn.append(None)
+            t_cum_rtn.append(np.nan)
         else:
             t_cum_rtn.append(1*(1+t_daily_rtn[-1]))
             flag = 1
@@ -384,8 +409,8 @@ def calc_sumyield(output, date, codelist):
             t_drawdown.append(t_cum_rtn[-1]/maxi - 1)
         except:
             t_drawdown.append(None)
-            
-        
+
+
 
     t_cum_rtn = t_cum_rtn[1:]
 
@@ -512,7 +537,7 @@ def wf(data, n_samples, test_percentage, test_num, isper):
         steps = int(round((length - n_samples)/test_length,0))
         return length, test_length, steps
 
-def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_and_train, benchmark, regression):
+def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_and_train, benchmark, regression, rtn_period):
     '''
     learning machine
     
@@ -548,10 +573,16 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_percentage, shuffle = False)
         
     else:
-        X_train = X.iloc[:-test_num]
-        X_test = X.iloc[-test_num:]
-        y_train = y.iloc[:-test_num]
-        y_test = y.iloc[-test_num:]
+        if rtn_period > 1:
+            X_train = X.iloc[:-test_num]
+            X_test = X.iloc[-test_num:]
+            y_train = y.iloc[:-test_num]
+            y_test = y.iloc[-test_num:]
+        else:
+            X_train = X.iloc[:-test_num - rtn_period]
+            X_test = X.iloc[-test_num:]
+            y_train = y.iloc[:-test_num - rtn_period]
+            y_test = y.iloc[-test_num:]
         
     #optimization and training at the same date
     if opt_and_train == 1:     
@@ -560,12 +591,13 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         #xgb.cv method
         dtrain = xgb.DMatrix(X_train,label=y_train)
         summary_list = []
+        params = {'min_child_weight': 0.5, "gamma":0,
+                  'colsample_bytree': 0.5, 'subsample': 0.3, 
+                  "n_jobs": -1, "verbosity": 0, 
+                  "silent": 1, "eta":0.1,
+                  "n_estimators": 900}
         for hyperparams in ParameterGrid(hyperparams):
-            params = {'min_child_weight': 0.5, "gamma":0,
-                      'colsample_bytree': 0.5, 'subsample': 0.3, 
-                      "n_jobs": -1, "verbosity": 0, 
-                      "silent": 1, "eta":0.1,
-                      "n_estimators": 900}
+
             params.update(hyperparams)
             summary = xgb.cv(params, dtrain, num_boost_round=4096, nfold=3, metrics = "error", early_stopping_rounds = 50,shuffle = False)
             summary_list.append(params)
@@ -613,7 +645,6 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         #X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size = 0.2, shuffle = False)
         
         #model.fit(X_train,y_train, eval_set=[(X_val, y_val)], eval_metric = "error", early_stopping_rounds = 5, verbose = False)
-        
         
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
