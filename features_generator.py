@@ -203,7 +203,7 @@ def seasonality(data):
                     delta = tmp_date - last_year
                     delta_list.append(abs(delta.days))
 
-                index = [index for index, d in enumerate(delta_list) if d == min(delta_list)]
+                index = np.argmin(delta_list)
                 if data.iloc[i,j] != 0 and data.iloc[i-252+ minn + index[0],j] == 0:
                     if data.iloc[i,j] > 0:
                         tmplist.append(1)
