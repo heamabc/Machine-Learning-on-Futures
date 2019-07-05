@@ -56,7 +56,7 @@ if__name__== "__main__:
         n_samples = train_size + test_num
         for k in tqdm(range(codelist.shape[0]), desc="codelist"):        
             product_name = str(codelist.iloc[k,0])
-            if product_name in [319,320]:
+            if product_name in ["319","320"]:
                 continue
             data = extract_data(codelist, k, regression, clipping, clip_benchmark)
             length, test_length, steps = wf(data, n_samples, test_percentage, test_num, isper)
