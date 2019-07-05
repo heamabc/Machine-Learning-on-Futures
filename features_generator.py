@@ -133,6 +133,7 @@ def rsi(data, periods):
 
     data = data.diff()
     for j in range(data.shape[1]):
+        product_name = str(data.iloc[:,j].name)
         for period in periods:
             tmplist = []
             a_gain = []
@@ -155,7 +156,7 @@ def rsi(data, periods):
                             down.append(data.iloc[i-k,j])
 
                     tmplist.append( (np.sum(up)/period) /((np.sum(up)/period) + abs(np.sum(down)/period) )*100)
-            output = pd.concat([output,pd.Series(tmplist)], axis=1)
+            output = pd.concat([output,pd.Series(tmplist, name = product_name + "_" + str(period))], axis=1)
     return output
 
 
@@ -183,7 +184,7 @@ def seasonality(data):
                     continue
 
                 delta = last_date - today
-                if delta.days < 365:
+                if delta.days < 0:
                     tmplist.append(np.nan)
                     continue
 
