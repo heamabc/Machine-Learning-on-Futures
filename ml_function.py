@@ -585,7 +585,8 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
             y_test = y.iloc[-test_num:]
         
     #optimization and training at the same date
-    if opt_and_train == 1:     
+    if opt_and_train == 1:    
+        results = pd.DataFrame()
         hyperparams = {"max_depth": [6,7,8]}
         
         #xgb.cv method
@@ -600,12 +601,13 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
 
             params.update(hyperparams)
             summary = xgb.cv(params, dtrain, num_boost_round=4096, nfold=3, metrics = "error", early_stopping_rounds = 50,shuffle = False)
-            summary_list.append(params)
-            summary_list.append(summary.shape[0])
-            summary_list.append(summary.iloc[-1,0])
             
-        params = summary_list[summary_list.index(np.max(summary_list[2::3]))-2]
-        params["n_estimators"] = summary_list[summary_list.index(np.max(summary_list[2::3]))-1]
+            best_cv_score = min(summary.iloc[:,0])
+            params["n_estimators"] = np.argmin(summary.iloc[:,0])            
+            results = results.append({"Score": best_cv_score,
+                                      "Parameters": params}, ignore_index=True)
+            
+        params = results["Parameters"].iloc[results["Score"].idxmin()]
         model = xgb.XGBClassifier(**params)    
        
         
