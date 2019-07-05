@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 
 def pct_change(bw, data, periods):
     '''
-    calculate backward percentage change
+    calculate backward or foward percentage change
 
     Parameters
     ----------
@@ -36,6 +36,50 @@ def pct_change(bw, data, periods):
                 tmpser = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
                 tmpser = tmpser.iloc[r:].reset_index(drop=True)
                 output[data.iloc[:,j].name + "_" + str(r)] = tmpser
+    return output
+
+
+def speical_pct_change(data, periods):
+    '''
+    calculate backward percentage change. Original data may have 0
+
+    Parameters
+    ----------
+    bw: boolean
+      If True, calculate backward percentage change. Else, forward percentage change
+    data : pd.DataFrame
+      The first column must be date, all other columns are data to be calculated.
+    periods: list
+      list of periods of percentage change to be calculated
+
+    Returns
+    ----------
+    pd.DataFrame
+      first column is date, all other are percentage change
+    ''' 
+  
+    output = pd.DataFrame()
+    output['date'] = data.iloc[:,0]
+
+    for j in range(1,data.shape[1]):
+        product_name = str(data.iloc[:,j].name)
+        for period in periods:
+            tmplist = []
+            for i in range(data.shape[0]):
+                if i < period:
+                    tmplist.append(None)
+                    continue
+                if str(data.iloc[i-period,j]) == "nan" or str(data.iloc[i,j]) == "nan":
+                    tmplist.append(None)
+                    continue
+                if data.iloc[i-period,j] == 0:
+                    if data.iloc[i,j] > 0:
+                        tmplist.append(1)
+                    else:
+                        tmplist.append(-1)
+                else:
+                    tmplist.append(data.iloc[i,j]/data.iloc[i-period,j] - 1)
+            output[product_name + "_" + str(period)] = tmplist   
     return output
 
 def med_outlier(data):
@@ -93,18 +137,6 @@ def rank_engine(data):
         output = pd.concat([output,tmp_data], axis=1)
     return output
 
-def binarize(data, zero_centered):
-    output = pd.DataFrame()
-    output['date'] = data.iloc[:,0]
-    data = data.iloc[:,1:]
-
-    if zero_centered == True:
-        for j in range(data.shape[1]):
-            output[data.iloc[:,j].name] = [1 if x >=0 else 0 if x < 0 else None for x in data.iloc[:,j]]
-    else:
-        for j in range(data.shape[1]):
-            output[data.iloc[:,j].name] = [1 if x >=1 else 0 if x < 1 else None for x in data.iloc[:,j]]
-    return output
 
 def match_date(data, date):
     '''
@@ -133,12 +165,11 @@ def match_date(data, date):
         tmp_list = []
         flag = 0
         data_count = data.iloc[:,a*2].shape[0] - data.iloc[:,a*2].isnull().sum()
-
+        first_date = datetime.datetime.strptime(data.iloc[0,a*2], "%m/%d/%Y")
+        
         for i in range(date.shape[0]):       
 
             today = datetime.datetime.strptime(date.iloc[i,0], "%m/%d/%Y")
-            first_date = datetime.datetime.strptime(data.iloc[0,a*2], "%m/%d/%Y")
-
             #3 cases:
             #first: today is earlier than the first available data, than today data is none
             #second: today match with the date that data is available, use the first effective data of that date, if no effective data, use             last effective data
@@ -167,6 +198,7 @@ def match_date(data, date):
 
                     for j in range(100):
                         if index + j == data_count:
+                            j -= 1
                             break
                         tmp_date = datetime.datetime.strptime(data.iloc[index + j,a*2], "%m/%d/%Y")
                         delta = tmp_date - today
@@ -177,20 +209,16 @@ def match_date(data, date):
                         delta_list.append(delta.days)
 
                     if len(delta_list) > 0:
-                        for j in range(len(delta_list)):
-                            if delta_list[j] == max(delta_list):
+                        tmp_date = today + datetime.timedelta(np.max(delta_list))
+                        tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
+                        tmp_data = data[data[product_name + "_date"] == tmp_date]
 
-                                tmp_date = today + datetime.timedelta(delta_list[j])
-                                tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
-                                tmp_data = data[data[product_name + "_date"] == tmp_date]
-
-                                #if today has multiple data, use only the first useful data. If no useful data, effective date
-                                #and effective data remain unchanged
-                                for kk in range(tmp_data.shape[0]):
-                                    if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
-                                        effective_date = tmp_date
-                                        effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
-                                        break
+                        #if today has multiple data, use only the first useful data. If no useful data, effective date
+                        #and effective data remain unchanged
+                        for kk in range(tmp_data.shape[0]):
+                            if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
+                                effective_date = tmp_date
+                                effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
                                 break
 
                     tmp_list.append(effective_data)
@@ -210,22 +238,19 @@ def match_date(data, date):
                             delta_list.append(delta.days)
 
                     if len(delta_list) > 0:
-                        for j in range(len(delta_list)):
-                            if delta_list[j] == max(delta_list):
 
-                                tmp_date = today + datetime.timedelta(delta_list[j])
-                                tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
-                                tmp_data = data[data[product_name + "_date"] == tmp_date]
+                        tmp_date = today + datetime.timedelta(np.max(delta_list))
+                        tmp_date = '{d.month}/{d.day}/{d.year}'.format(d=tmp_date)
+                        tmp_data = data[data[product_name + "_date"] == tmp_date]
 
-                                #if today has multiple data, use only the first useful data. If no useful data, effective date
-                                #and effective data remain unchanged
-                                for kk in range(tmp_data.shape[0]):
-                                    if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
-                                        effective_date = tmp_date
-                                        effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
-                                        break
+                        #if today has multiple data, use only the first useful data. If no useful data, effective date
+                        #and effective data remain unchanged
+                        for kk in range(tmp_data.shape[0]):
+                            if str(tmp_data.iloc[kk,a*2+1]) != "nan" and str(tmp_data.iloc[kk,a*2+1]) != "None" and str(tmp_data.iloc[kk,a*2+1]) != "0" and tmp_data.iloc[kk,a*2+1] != 0:
+                                effective_date = tmp_date
+                                effective_data = data[data[product_name + "_date"] == effective_date].iloc[kk,a*2+1]
                                 break
-
+                                
                     tmp_list.append(effective_data)
                     flag = 1
 
