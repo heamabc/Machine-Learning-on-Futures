@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*
 import pandas as pd
 import numpy as np
 import math
+import datetime
 import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split, ParameterGrid
@@ -63,66 +63,20 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     X = []
     dtypelist = []
     
-    '''
-    data0 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\close_price_preprocessed.csv")
-    #5,10,15
-    X.append(data0)
-    dtypelist.append("rtn_cc")
-
-    data1 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\open_price_preprocessed.csv")
-    #5,10,15
-    X.append(data1)
-    dtypelist.append("rtn_oo")
-
-    data4 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\return_signal_momentum_preprocessed.csv")
-    X.append(data4)
-    dtypelist.append("rs")
-    #5,10,15
-
-    data6 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\roll_rtn_preprocessed.csv")
-    X.append(data6)
-    dtypelist.append("rr")
-    #1
-
-    data7 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\basis_momentum_preprocessed.csv")
-    X.append(data7)
-    dtypelist.append("bm")
-    #5,10,15
-
-    data11 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\inventory_preprocessed.csv")
-    X.append(data11)
-    dtypelist.append("inv_s")
-    #5,10,15
-
-    data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\warehouse_receipt_preprocessed.csv")
-    X.append(data12)
-    dtypelist.append("wr_s")
-    #5,10,15
-
-    data13 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\rsi_preprocessed.csv")
-    X.append(data13)
-    dtypelist.append("rsi")
-    #5,10,15
-
-    data14 = pd.read_csv(r"D:\QuantChina\ML\signal_data\5,10,15\bias_preprocessed.csv")
-    X.append(data14)
-    dtypelist.append("bias")
-    #5,10,15
-    '''
     data0 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\close_price_bw_pct_change_preprocessed.csv")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
     X.append(data0)
     dtypelist.append("rtn_cc")
 
     data1 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_bw_pct_change_preprocessed.csv")
-    #5,10,15
     X.append(data1)
     dtypelist.append("rtn_oo")
+    #5,10,15,20,25,30,35,40,45,50
 
     data4 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\return_signal_momentum_preprocessed.csv")
     X.append(data4)
     dtypelist.append("rs")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
 
     data6 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_preprocessed.csv")
     X.append(data6)
@@ -132,58 +86,34 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     data7 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\basis_momentum_preprocessed.csv")
     X.append(data7)
     dtypelist.append("bm")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
 
     data11 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_bw_pct_change_preprocessed.csv")
     X.append(data11)
     dtypelist.append("inv_s")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
 
     data12 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_bw_pct_change_preprocessed.csv")
     X.append(data12)
     dtypelist.append("wr_s")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
 
     data13 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\rsi_preprocessed.csv")
     X.append(data13)
     dtypelist.append("rsi")
-    #5,10,15
+    #5,10,15,20,25,30,35,40,45,50
 
     data14 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\bias_preprocessed.csv")
     X.append(data14)
     dtypelist.append("bias")
-    #5,10,15
-    
-    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality_preprocessed.csv")
-    X.append(data15)
-    dtypelist.append("sea_inv")
-
-    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality_preprocessed.csv")
-    X.append(data16)
-    dtypelist.append("sea_wr")
-
-    data17 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_seasonality_preprocessed.csv")
-    X.append(data17)
-    dtypelist.append("sea_rr")
+    #5,10,15,20,25,30,35,40,45,50
 
     
     if regression == True or clipping == True:
         ydata = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_cc_data.csv")
     else:
-        ydata = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change_5_signal.csv")  
-    
-    
-    if clipping == True:
-        tmp_ydata = []
-        perc = ydata.rank(pct=True)
-        for abc in range(ydata.shape[0]):
-            if perc.iloc[abc,0] > clip_benchmark:
-                tmp_ydata.append(1)
-            elif perc.iloc[abc,0] < (1 - clip_benchmark):
-                tmp_ydata.append(0)
-            else:
-                tmp_ydata.append(None)
-        ydata = tmp_ydata
+        Y = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change_5_signal.csv", usecols = [product_name])  
+        test = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change.csv", usecols = [product_name])
     
     X_df = pd.DataFrame()
 
@@ -203,7 +133,6 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
         tmp_in.columns += dtypelist[abc]
         X_df = pd.concat([X_df,tmp_in],axis=1)
 
-    Y = ydata.loc[:,product_name]
 
     na_count = X_df.isnull().sum().max()
     #use yesterday X to predict today Y
@@ -220,7 +149,7 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
         values_within = ((data.iloc[:,1] < mean + clip_benchmark*std) & (data.iloc[:,1] > mean - clip_benchmark*std))
         data.loc[values_within,product_name] = None
     
-    return data
+    return data, test
 
 #calculate the daily return
 def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
@@ -435,7 +364,7 @@ def calc_sumyield(output, date, codelist):
     return output, tmp_rtn, cumrtn
 
 #calculate the metrics of the portfolio
-def calc_metrics(rtn,cumrtn, accuracy, r2, regression):
+def calc_metrics(rtn,cumrtn, accuracy, r2, regression, date, evals):
     '''
     Calculate cum_rtn, annualized_rtn, annualized_volatility, sharpe, and max drawdown for all individual product and portfolio
     
@@ -447,6 +376,7 @@ def calc_metrics(rtn,cumrtn, accuracy, r2, regression):
     accuracy: list
     r2: list
     regression: boolean
+    date: pd.Series
     
     return
     -------------
@@ -463,7 +393,12 @@ def calc_metrics(rtn,cumrtn, accuracy, r2, regression):
 
     for j in range(tmp_cumrtn.shape[1]):
         cum_rtn.append(tmp_cumrtn.iloc[-1,j])
-        annualized_rtn.append((tmp_cumrtn.iloc[-1,j] - 1)/(tmp_cumrtn.shape[0] - tmp_cumrtn.iloc[:,j].isnull().sum() - 1)*365)
+        
+        first_date = datetime.datetime.strptime(date.iloc[tmp_cumrtn.iloc[:,j].first_valid_index()],"%m/%d/%Y")
+        last_date = datetime.datetime.strptime(date.iloc[-1],"%m/%d/%Y")
+        delta = (last_date - first_date).days
+        
+        annualized_rtn.append((np.exp(np.log(tmp_cumrtn.iloc[-1,j])*365/delta) - 1))
         annualized_volatility.append(np.std(rtn.iloc[:,j+1])* math.sqrt(252))
         sharpe.append(annualized_rtn[-1]/annualized_volatility[-1])
 
@@ -489,7 +424,10 @@ def calc_metrics(rtn,cumrtn, accuracy, r2, regression):
     else:
         accuracy.append(None)
         metrics["accuracy"] = accuracy
+        evals.append(None)
+        metrics["evals"] = evals
     metrics = metrics.set_index(cumrtn.columns[1:])
+    
     return metrics
 
 #binary classification of prediction
@@ -652,9 +590,10 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         y_pred = model.predict(X_test)
 
         if regression != True:
-            y_pred = classify(y_pred, benchmark, regression)
+            pred = classify(y_pred, benchmark, regression)
         y_test = pd.DataFrame(y_test).reset_index()
-        y_test[y.name + "_prediction"] = y_pred
+        y_test[y.name + "_prediction"] = pred
+        y_test[y.name + "_confidence"] = y_pred*2-1
         
         
         return y_test, model
