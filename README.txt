@@ -4,7 +4,7 @@ Environment: python 3
 This is a machine learning project on predicting the 31 commodity futures price. it uses as much information available to generate features and use these features to predict commodity futures price.
 
 Performance:
-Optained on average 0.57 accuracy. Achieved 32% annualized return, and sharpe ratio of 4.5.
+Optained on average 0.57 accuracy. Achieved 10.7% annualized return, and sharpe ratio of 1.5.
 
 Available information includes:
   Date
