@@ -3,8 +3,7 @@ import numpy as np
 import math
 import datetime
 import xgboost as xgb
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, train_test_split, ParameterGrid
+from sklearn.model_selection import train_test_split, ParameterGrid
 
 #initialize function
 def initialize():
@@ -107,6 +106,18 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     X.append(data14)
     dtypelist.append("bias")
     #5,10,15,20,25,30,35,40,45,50
+    
+    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality_preprocessed.csv")
+    X.append(data15)
+    dtypelist.append("sea_inv")
+
+    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality_preprocessed.csv")
+    X.append(data16)
+    dtypelist.append("sea_wr")
+
+    data17 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_seasonality_preprocessed.csv")
+    X.append(data17)
+    dtypelist.append("sea_rr")
 
     
     if regression == True or clipping == True:
@@ -116,25 +127,28 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
         test = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change.csv", usecols = [product_name])
     
     X_df = pd.DataFrame()
+    na = []
 
     for abc in range(len(X)):
         element = X[abc]
         a = element.columns.tolist()
-        indexlist = []
-        for j in range(len(a)):
-            if a[j][:3] == product_name:
-                indexlist.append(j)
-
+        indexlist = [ele if ele[:3] == product_name for ele in a]
+        
         #avoid null input
         if len(indexlist) == 0:
             continue
-
+        
+        na.append(tmp_tin.isnull().max())
         tmp_in = element.iloc[:,indexlist]
         tmp_in.columns += dtypelist[abc]
         X_df = pd.concat([X_df,tmp_in],axis=1)
 
-
-    na_count = X_df.isnull().sum().max()
+    """
+    #start training when there are 4 features available
+    na.sort()
+    na_count = na[4]
+    """
+    na_count = max(na)
     #use yesterday X to predict today Y
     X_df = X_df.iloc[na_count:-1].reset_index(drop=True)
 
@@ -338,8 +352,6 @@ def calc_sumyield(output, date, codelist):
             t_drawdown.append(t_cum_rtn[-1]/maxi - 1)
         except:
             t_drawdown.append(None)
-
-
 
     t_cum_rtn = t_cum_rtn[1:]
 
@@ -588,15 +600,12 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
+        confidence = model.predict_proba(X_test)
 
         if regression != True:
             pred = classify(y_pred, benchmark, regression)
-        y_test = pd.DataFrame(y_test).reset_index()
-        y_test[y.name + "_prediction"] = pred
-        y_test[y.name + "_confidence"] = y_pred*2-1
         
-        
-        return y_test, model
+        return y_test, pred, confidence
         
     else:
         if method == "random_forest":
