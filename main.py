@@ -23,6 +23,7 @@ if__name__== "__main__:
     clipping = False
     clip_benchmark = 0.0
     rtn_period = 5
+    evals = []
 
     #opt params
     #if opt_and_train = True, test_num is the period for opt_and_train
@@ -58,22 +59,16 @@ if__name__== "__main__:
             product_name = str(codelist.iloc[k,0])
             if product_name in ["319","320"]:
                 continue
-            data = extract_data(codelist, k, regression, clipping, clip_benchmark)
-            length, test_length, steps = wf(data, n_samples, test_percentage, test_num, isper)
+            data, test = extract_data(codelist, k, regression, clipping, clip_benchmark)
 
             #generate opt_marker
             if product_name == "305":
                 tmplist = []
 
-                if rtn_period > 1:
-                    add = rtn_period
-                else:
-                    add = 0
-
-                for abcdefg in range(output.shape[0] - (data.shape[0]+add) + train_size):
+                for abcdefg in range(output.shape[0] - data.shape[0] + train_size):
                     tmplist.append(None)
 
-                for abcdefg in range(output.shape[0] - (output.shape[0] - (data.shape[0]+add) + train_size)):
+                for abcdefg in range(output.shape[0] - (output.shape[0] - data.shape[0] + train_size)):
                     if abcdefg % test_num == 0:
                         tmplist.append(1)
                     else:
@@ -82,27 +77,34 @@ if__name__== "__main__:
 
             tmp_true_and_pred = pd.DataFrame()
 
+            true = []
+            pred = []
+            confidence = []
+
             #start ML
-            na_count = output.shape[0] - (data.shape[0]+add)
+            na_count = output.shape[0] - (data.shape[0])
             for i in tqdm(range(data.shape[0]+test_num), desc = "ML"):
-                if opt_marker.iloc[i+na_count-test_num] == 1 and i >= n_samples:
+                if opt_marker.iloc[i+na_count-test_num] == 1 and i >= n_samples and datetime.datetime.strptime(output.iloc[i+na_count-test_num,0], "%m/%d/%Y") >= datetime.datetime(2015,1,1):
                     if i <= data.shape[0]:
-                        data_wf = data.iloc[i-n_samples:i]
-                        y_test, model = build_model(data_wf, test_percentage, test_num, isper, method, params, opt_and_train, benchmark, regression, rtn_period)
+                        start = i-n_samples
+                        data_wf = pd.concat([data.iloc[start:i,:-1],data.iloc[start:i,-1]],axis=1)
+                        true1, pred1, confidence1 = build_model(data_wf, test_percentage, test_num, isper, method, params, opt_and_train, benchmark, regression, rtn_period)
                     else:
-                        data_wf = data.iloc[i-n_samples:]
-                        y_test, model = build_model(data_wf, test_percentage, data_wf.shape[0] - train_size, isper, method, params, opt_and_train, benchmark, regression, rtn_period)
-                    tmp_true_and_pred = tmp_true_and_pred.append(y_test, ignore_index=True)
+                        start = i-n_samples
+                        data_wf = pd.concat([data.iloc[start:,:-1],data.iloc[start:,-1]],axis=1)
+                        true1, pred1, confidence1 = build_model(data_wf, test_percentage, data_wf.shape[0] - train_size, isper, method, params, opt_and_train, benchmark, regression, rtn_period)
+                    true.extend(true1)
+                    pred.extend(pred1)
+                    confidence.extend(confidence1)
                 else:
                     continue
 
+            tmp_true_and_pred = pd.DataFrame({product_name : true, product_name + "_prediction" : pred, product_name + "_confidence" : confidence})
+            '''
             if rtn_period > 1:
                 for abc in range(rtn_period):
                     tmp_true_and_pred = tmp_true_and_pred.append(pd.Series(), ignore_index = True)
-
-            #reshaping to same length
-            tmp_true_and_pred = tmp_true_and_pred.drop("index", axis=1)
-
+            '''
 
             if regression == True:
                 tmp_true_and_pred[product_name+"_signal"] = [1 if x>= benchmark else -1 if x < -benchmark else 0 for x in tmp_true_and_pred[product_name+"_prediction"]]
@@ -120,6 +122,7 @@ if__name__== "__main__:
                     tmp_true_and_pred = tmp_true_and_pred.append(pd.Series(), ignore_index=True)
             tmp_true_and_pred.reset_index(drop=True)
             '''
+
             if true_and_pred.shape[0] > tmp_true_and_pred.shape[0]:
                 for abc in range(true_and_pred.shape[0] - tmp_true_and_pred.shape[0]):
                     tmp_true_and_pred.index+=1
@@ -155,6 +158,7 @@ if__name__== "__main__:
                     tmp_output.index += 1
 
             output = pd.concat([output,tmp_output], axis=1)
+            evals.append((tmp_true_and_pred.iloc[:,2] * test.iloc[tmp_true_and_pred.index[0]:,0]).sum())
 
 
         date = output["date"]
@@ -162,7 +166,7 @@ if__name__== "__main__:
         output, rtn, cumrtn = calc_sumyield(output, date, codelist)
 
         #metrics calculator
-        metrics =  calc_metrics(rtn,cumrtn, accuracy, r2, regression)
+        metrics =  calc_metrics(rtn,cumrtn, accuracy, r2, regression, date, evals)
   
     writer = pd.ExcelWriter(r'D:\QuantChina\ML\backtest_10_features_252+20_oo_xgbcv.xlsx', engine='xlsxwriter')
     output.to_excel(writer, sheet_name = "data", index=False)
