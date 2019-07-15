@@ -16,7 +16,6 @@ Available information includes:
   Warehouse Receipt
 data are all available in raw. data is retrieved from 2007 to 2019. All data are retrieved from Wind.
 
-
 Features:
 	Basis Momentum: culmulative return of spot - culmulative returne of futures : period = 5,10,15
 	Bias Response Line: (price - moving average)/moving average * 100 : period = 5,10,15
@@ -31,8 +30,7 @@ Features:
 		Inventory year-to-year Percentage Change
 		Warehouse Receipt year-to-year Percentage Change
 		Roll Return year-to-year Percentage Change
-
-
+		
 Strategy:
   In this project, I would use machine learning model to predict 37 commodity futures price with features mentioned above.
   
@@ -50,8 +48,7 @@ Strategy:
   in the optimization and training process to prevent overfitting.
   
   Currently, only xgboost is used as leaning machine. It is becauseXgboost usually has high performance in classification task. 
- 
- 
+  
 Vision Board:
   More data engineering to increase relationship between features and label (clipping, better outlier detection, pca)
   Include more learning machine, including not tree based machine.
