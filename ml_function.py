@@ -107,41 +107,53 @@ def extract_data(codelist, k, regression, clipping, clip_benchmark):
     X.append(data14)
     dtypelist.append("bias")
     #5,10,15,20,25,30,35,40,45,50
+    
+    data15 = pd.read_csv(r"D:\QuantChina\ML\signal_data\inventory_seasonality_preprocessed.csv")
+    X.append(data15)
+    dtypelist.append("sea_inv")
+
+    data16 = pd.read_csv(r"D:\QuantChina\ML\signal_data\warehouse_receipt_seasonality_preprocessed.csv")
+    X.append(data16)
+    dtypelist.append("sea_wr")
+
+    data17 = pd.read_csv(r"D:\QuantChina\ML\unadjusted\roll_rtn_seasonality_preprocessed.csv")
+    X.append(data17)
+    dtypelist.append("sea_rr")
 
     
     if regression == True or clipping == True:
         ydata = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_cc_data.csv")
     else:
-        Y = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change_5_signal.csv", usecols = [product_name])  
-        test = pd.read_csv(r"D:\QuantChina\ML\unadjusted\open_price_fw_pct_change.csv", usecols = [product_name])
+        Y = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_oo_fw_5_signal.csv", usecols = [product_name])  
+        test = pd.read_csv(r"D:\QuantChina\ML\rtn_data\rtn_oo_fw_5.csv", usecols = [product_name])
     
     X_df = pd.DataFrame()
+    na = []
 
     for abc in range(len(X)):
         element = X[abc]
         a = element.columns.tolist()
-        indexlist = []
-        for j in range(len(a)):
-            if a[j][:3] == product_name:
-                indexlist.append(j)
+        indexlist = [ele for ele in a if ele[:3] == product_name]
 
         #avoid null input
         if len(indexlist) == 0:
             continue
-
-        tmp_in = element.iloc[:,indexlist]
+        
+        tmp_in = element.loc[:,indexlist]
+        
+        na.append(tmp_in.isnull().sum().max())
         tmp_in.columns += dtypelist[abc]
         X_df = pd.concat([X_df,tmp_in],axis=1)
-
-
-    na_count = X_df.isnull().sum().max()
+    
+    na.sort()
+    na_count = na[4]
+    #na_count = max(na)
     #use yesterday X to predict today Y
     X_df = X_df.iloc[na_count:-1].reset_index(drop=True)
 
     Y = Y.iloc[na_count+1:].reset_index(drop=True)
     
     data = pd.concat([X_df,Y], axis=1)
-    data.dropna(inplace=True)
     
     if clipping == True:
         mean = data.iloc[:,-1].mean()
@@ -222,8 +234,11 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
     
     daily_rtn = []
     
+    #flag to indicate whether the first position is appeared
     flag = 0
+    
     for i in range(tmp_output.shape[0]):
+        #return calculation
         if str(tmp_output[product_name + "_position"].iloc[i]) == "nan" and flag == 0:
             daily_rtn.append(None)
         elif str(tmp_output[product_name + "_position"].iloc[i]) == "nan" and flag == 1:
@@ -260,6 +275,34 @@ def calc_rtn(product_name, tmp_true_and_pred, k, opt_marker, rtn_period):
                 daily_rtn.append(-tmp_output[product_name + "_rtn_co"].iloc[i])
             else:
                 daily_rtn.append(-tmp_output[product_name + "_rtn_cc"].iloc[i])
+                
+        
+        #cost calculation       
+        if i == 0:
+            if tmp_output[product_name + "_position"].iloc[i] == 1 or tmp_output[product_name + "_position"].iloc[i] == -1:
+                daily_rtn[-1] -= 0.0003
+                continue
+                
+        if tmp_output[product_name + "_position"].iloc[i] == 1:
+            if tmp_output[product_name + "_position"].iloc[i-1] == 1:
+                continue
+            elif tmp_output[product_name + "_position"].iloc[i-1] == 0 or str(tmp_output[product_name + "_position"].iloc[i-1]) == "nan":
+                daily_rtn[-1] -= 0.0003
+            else:
+                daily_rtn[-1] -= 0.0006
+        elif tmp_output[product_name + "_position"].iloc[i] == 0:
+            if tmp_output[product_name + "_position"].iloc[i-1] == 1 or tmp_output[product_name + "_position"].iloc[i-1] == -1:
+                daily_rtn[-1] -= 0.0003
+            else:
+                continue
+        else:
+            if tmp_output[product_name + "_position"].iloc[i-1] == 1:
+                daily_rtn[-1] -= 0.0006
+            elif tmp_output[product_name + "_position"].iloc[i-1] == 0 or str(tmp_output[product_name + "_position"].iloc[i-1]) == "nan":
+                daily_rtn[-1] -= 0.0003
+            else:
+                continue
+                
     tmp_output[product_name + "_daily_rtn"] = daily_rtn
                 
     cum_rtn = []
@@ -338,8 +381,6 @@ def calc_sumyield(output, date, codelist):
             t_drawdown.append(t_cum_rtn[-1]/maxi - 1)
         except:
             t_drawdown.append(None)
-
-
 
     t_cum_rtn = t_cum_rtn[1:]
 
@@ -437,43 +478,6 @@ def classify(y_pred, benchmark, regression):
     else:
         y_pred = [1 if y >= benchmark else -1 if y < benchmark else 0 for y in y_pred]
     return y_pred
-
-#walk forward generator
-def wf(data, n_samples, test_percentage, test_num, isper):
-    '''
-    generate walk foward data
-    
-    Parameters
-    ---------------
-    data: pd.DataFrame
-    n_samples: int
-        number of training set
-    test_percentage: float
-        percentage of test set
-    test_num: int
-        number of test set
-    iseper: boolean
-        if True, use test_percentage. Else, use test_num
-        
-    Return
-    ---------------
-    int
-        total length of valid data
-    int
-        length of test set
-    int
-        how many steps the walk forward process is included
-    '''
-    if isper:
-        length = data.shape[0] - data.iloc[:,0].isna().sum()
-        test_length = int(round(n_samples*test_percentage))
-        steps = int(round((length - n_samples)/test_length,0))
-        return length, test_length, steps
-    else:
-        length = data.shape[0] - data.iloc[:,0].isna().sum()
-        test_length = test_num
-        steps = int(round((length - n_samples)/test_length,0))
-        return length, test_length, steps
 
 def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_and_train, benchmark, regression, rtn_period):
     '''
@@ -588,15 +592,12 @@ def build_model(data_wf, test_percentage, test_num, isper, method, params, opt_a
         
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
+        confidence = model.predict_proba(X_test)[:,1]
 
         if regression != True:
             pred = classify(y_pred, benchmark, regression)
-        y_test = pd.DataFrame(y_test).reset_index()
-        y_test[y.name + "_prediction"] = pred
-        y_test[y.name + "_confidence"] = y_pred*2-1
         
-        
-        return y_test, model
+        return y_test, pred, confidence
         
     else:
         if method == "random_forest":
