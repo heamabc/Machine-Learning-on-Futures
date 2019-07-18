@@ -34,20 +34,21 @@ Features:
 Strategy:
   In this project, I would use machine learning model to predict 37 commodity futures price with features mentioned above.
   
-  Reasoning for data engineering: 
-  I assume that there is some relationship between the features and the price movement. 
-  However, Raw data is not enough to predict price movement. I assume that relationship of trend or reversal of price with a 
-  periodic features is existed. Therefore, All features are calculated in several period, Eg, 5 days, 10 days. 
-  Label is defined as two classes. If price has increased, marked as positive, else, marked as negativel.
+  Operation and reasoning for data engineering: 
+	  I assume that there is some relationship between the features and the price movement. 
+	  However, Raw data is not enough to predict price movement. I assume that relationship of trend or reversal of price with a 
+	  periodic features is existed. Therefore, All features are calculated in several period, Eg, 5 days, 10 days. 
+	  Label is defined as two classes. If price has increased, marked as positive, else, marked as negativel.
   
-  Reasoning for Machine learning process: 
-  Use one year data as training set, 20 days data as test set. The prediction is rolling, 
-  using a non-enchore walk forward method to predict futures price.
-  The reason for walk forward method is that the relationship between features and label may be changed in different timeframe.
-  Optimize and train the model in every step of the walk forward to ensure high quality of prediction. Cross validation is included
-  in the optimization and training process to prevent overfitting.
+  Operation and reasoning for Machine learning process: 
+	  Use one year data as training set, 20 days data as test set. The prediction is rolling, 
+	  For any given date, if there is 5 features data available, the machine learning process will be initiated
+	  using a non-enchore walk forward method to predict futures price. (ie. the training set will be fixed in length)
+	  The reason for walk forward method is that the relationship between features and label may be changed in different timeframe.
+	  Optimize and train the model in every step of the walk forward to ensure high quality of prediction. Cross validation is included to perform optimization.
+	  Only optimize the depth of tree. (From emperical testing, the best depth of tree fluctuates a lot.)
   
-  Currently, only xgboost is used as leaning machine. It is becauseXgboost usually has high performance in classification task. 
+  	Currently, only xgboost is used as leaning machine. It is becauseXgboost usually has high performance in classification task. 
   
 Vision Board:
   More data engineering to increase relationship between features and label (clipping, better outlier detection, pca)
