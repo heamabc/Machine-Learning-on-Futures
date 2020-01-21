@@ -1,4 +1,4 @@
-# Deep learning futures trading strategy
+# Machine Learning on Futures
 
 This is a machine learning project on predicting the 37 Chinese commodity futures price. it uses Wind information to generate features and use these features to predict commodity futures price.
 
