@@ -28,11 +28,11 @@ def basis_momentum(sp, fp, periods):
     for j in range(fp.shape[1]):
         for r in periods:
             tmplist = []
-            for i in range(r):
-                tmplist.append(None)
+            
+            tmplist.extend(r * [None])
 
             for i in range(r,fp.shape[0]):
-                if str(sp.iloc[i-r,j]) == "nan" or str(fp.iloc[i-r,j]) == "nan":
+                if sp.iloc[i-r,j].isna() or fp.iloc[i-r,j].isna():
                     tmplist.append(None)
                     continue           
 
@@ -45,19 +45,40 @@ def basis_momentum(sp, fp, periods):
 def bias(data, periods):
     '''
     bias: (price - r days moving average) / r days moving average * 100
+    
+    Parameters
+    ----------
+    data: pd.DataFrame
+      first column is date, all other columns are futures spot price.
+    periods: list
+      list of periods of bias to be calculated
+
+    Returns
+    ----------
+    pd.DataFrame
+      first column is date, all other are basis momentum
     '''
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
     data = data.iloc[:,1:]
 
-
-    for j in range(data.shape[1]):
+    def bias_generator(series):
+         
+        df = pd.DataFrame(len(periods) * [series]).T
+        
         for period in periods:
-            ma = data.rolling(period).mean()
-            product_name = data.iloc[:,j].name
+            df[series.name + '_' + str(period)] = series.rolling(period).mean()
+        
+        price = df.iloc[:,:len(periods)]
+        ma = df.iloc[:,len(periods):]
+        
+        return (price.values - ma) / ma * 100
+    
+    df_list = []
+    for col in data:
+        df_list.append(bias_generator(data[col]))
 
-            output[product_name + "_" + str(period)] = (data.iloc[:,j] - ma.iloc[:,j])/ma.iloc[:,j] * 100
-    return output
+    return pd.concat([output,pd.concat(df_list, axis=1)], axis=1)
 
 
 def ln_price(data):
