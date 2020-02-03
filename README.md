@@ -5,6 +5,11 @@ This is a machine learning project on predicting the 37 Chinese commodity future
 ### Performance
 Optained on average 0.57 accuracy. Achieved 10.7% annualized return, and sharpe ratio of 1.5.
 
+### File Description
+- features_generator.py and preprocessing.py : for generating features and preprocessing them
+- ml_function.py : contains the neccessary function for running the program (read data, cal return, machine learning)
+- main.py 
+
 ### Available information includes
 - Date
 - Option Code: each commodity futures has its own Option Code
