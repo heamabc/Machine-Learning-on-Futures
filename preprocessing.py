@@ -5,8 +5,10 @@ from sklearn.preprocessing import StandardScaler
 
 def pct_change(bw, data, periods):
     '''
+    Description
+    ----------
     calculate backward or foward percentage change
-
+    
     Parameters
     ----------
     bw: boolean
@@ -15,92 +17,87 @@ def pct_change(bw, data, periods):
       The first column must be date, all other columns are data to be calculated.
     periods: list
       list of periods of percentage change to be calculated
-
+      
     Returns
     ----------
     pd.DataFrame
       first column is date, all other are percentage change
     ''' 
-  
-    output = pd.DataFrame()
-    output["date"] = data.iloc[:,0]
-    data = data.iloc[:,1:]
+    data_list = []
+    
+    def pct_change_function(bw, r, series):
+        if series.name == "date":
+            return series
+        if bw:
+            series = series/series.shift(r) - 1
+            
+            #If the denominator is zero, it will be inf. We convert it into nan
+            series.loc[~np.isfinite(series)] = np.nan
+            
+            return series
+        else:
+            series = series.shift(-r)/series - 1
+            
+            #If the denominator is zero, it will be inf. We convert it into nan
+            series.loc[~np.isfinite(series)] = np.nan
+            
+            return series
+    
+    for r in periods:
+        data_list.append(data.apply(lambda x : pct_change_function(bw, r, x)).add_suffix('_' + str(r)))
+    
+    # Make all the pct change data into 1 df
+    data = pd.concat(data_list, axis=1)
 
-    if bw == True:
-        for j in range(data.shape[1]):
-            for r in periods:
-                output[data.iloc[:,j].name + "_" + str(r)] = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
-    else:
-        for j in range(data.shape[1]):
-            for r in periods:
-                tmpser = data.iloc[:,j]/data.iloc[:,j].shift(r) - 1
-                tmpser = tmpser.iloc[r:].reset_index(drop=True)
-                output[data.iloc[:,j].name + "_" + str(r)] = tmpser
-    return output
-
-
-def speical_pct_change(data, periods):
-    '''
-    calculate backward percentage change. Original data may have 0
-
-    Parameters
-    ----------
-    bw: boolean
-      If True, calculate backward percentage change. Else, forward percentage change
-    data : pd.DataFrame
-      The first column must be date, all other columns are data to be calculated.
-    periods: list
-      list of periods of percentage change to be calculated
-
-    Returns
-    ----------
-    pd.DataFrame
-      first column is date, all other are percentage change
-    ''' 
-  
-    output = pd.DataFrame()
-    output['date'] = data.iloc[:,0]
-
-    for j in range(1,data.shape[1]):
-        product_name = str(data.iloc[:,j].name)
-        for period in periods:
-            tmplist = []
-            for i in range(data.shape[0]):
-                if i < period:
-                    tmplist.append(None)
-                    continue
-                if str(data.iloc[i-period,j]) == "nan" or str(data.iloc[i,j]) == "nan":
-                    tmplist.append(None)
-                    continue
-                if data.iloc[i-period,j] == 0:
-                    if data.iloc[i,j] > 0:
-                        tmplist.append(1)
-                    else:
-                        tmplist.append(-1)
-                else:
-                    tmplist.append(data.iloc[i,j]/data.iloc[i-period,j] - 1)
-            output[product_name + "_" + str(period)] = tmplist   
-    return output
+    return data
 
 def med_outlier(data):
     '''
+    Description
+    ----------
     Detect outlier that exceeds median +/- 5*median1, replace with median +/- 5*median1,
-    median1 = |x - median|.median
+    median1 = median of |x - median|
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+      The first column must be date, all other columns are data to be calculated.
+      
+     Returns
+    ----------
+    pd.DataFrame
+      first column is date
     '''
-    output = pd.DataFrame()
-    output["date"] = data["date"]
-    data = data.iloc[:,1:]
 
-    for j in range(data.shape[1]):
-        median = np.median(data.iloc[:,j])
-        median1 = np.median(abs(data.iloc[:,j] - np.mean(data.iloc[:,j])))
-
+    def med_outlier_function(series):
+        if series.name == "date":
+            return series
+        
+        median = np.median(series)
+        median1 = np.median( abs( series - np.mean(series) ) )
+        
         f = lambda x: median + 5*median1 if x > median + 5*median1 else median - 5*median1 if x < median - 5*median1 else x
-        output[data.iloc[:,j].name] = data.iloc[:,j].apply(f)
-    return output
+        return series.apply(f)
+    
+    return data.apply(lambda x:med_outlier_function(x))
   
 def standardize(data):
-    #standardize data to N(0,1)
+    '''
+    Description
+    ----------
+    Standardize all the data to normal distribution N(0,1)
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+      The first column must be date, all other columns are data to be calculated.
+      
+     Returns
+    ----------
+    pd.DataFrame
+      first column is date
+    '''
+
     output = pd.DataFrame()
     output["date"] = data["date"]
     name = data.columns
@@ -113,43 +110,57 @@ def standardize(data):
   
 def rank_engine(data):
     '''
-    data reqruiement: same product with different period must be placed adjacently
-    return rank df with rank of data with the same period
+    Description
+    ----------
+    Based on different period(r), generate ranking of all products on each date based on the value. Descending order.
+    Eg, ranking of moving average of all products with period 5
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+      The first column must be date, all other columns are data to be calculated.
+      Same product with different period must be placed adjacently
+      
+     Returns
+    ----------
+    pd.DataFrame
+      first column is date, return rank df with rank of data with the same period
     '''
     output = pd.DataFrame()
     output["date"] = data.iloc[:,0]
     data = data.iloc[:,1:]
+    name_list = []
 
-    #count the number of products
-    a = data.columns.tolist()
-    for i in range(len(a)):
-        a[i] = a[i][:3]
-    a = pd.Series(a)
-    length = a.nunique()
+    #count the number of products to decide number of groups (how many different periods are there)
+    name_list = [name[:3] for name in data.columns]
+    length = len(np.unique(name_list))
+    num_groups = int(data.shape[1]/length)
 
-    for k in range(int(data.shape[1]/length)):
-        tmp_data = pd.DataFrame()
-        for j in range((length)):
-            tmp = data.iloc[:,j*(int(data.shape[1]/length)) + k]
-            tmp_data = pd.concat([tmp_data,tmp], axis=1)
+    for i in range(num_groups):
+        # Make sub group according to their period
+        sub_data = data.iloc[:,i * length : i * length -1]
 
-        tmp_data = tmp_data.rank(axis=1,method="first", ascending=False)
-        output = pd.concat([output,tmp_data], axis=1)
+        # Rank among sub group
+        sub_data = sub_data.rank(axis=1,method="first", ascending=False)
+        output = pd.concat([output,sub_data], axis=1)
+        
     return output
 
 
 def match_date(data, date):
     '''
-    make all data matched date with the date column
-    if today has no data, use last effective date data to replace today data
-
+    Description
+    ----------
+    Date of the raw data is different. This function is the merge by their date.
+    Handle many of the anormal cases with the data.
+    
     Parameters
     ----------
     data: pd.DataFrame
       even column is the date, odd column is the corresponding data of that feature
     date: pd.Series
       date that would like to be matched
-
+      
     Returns
     ----------
     pd.DataFrame
